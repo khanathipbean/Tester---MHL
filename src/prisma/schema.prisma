@@ -3,17 +3,17 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Project {
-  id          String     @id @default(cuid())
-  key         String     @unique
+  id          String      @id @default(cuid())
+  key         String      @unique
   name        String
   description String?
-  status      String     @default("ACTIVE")
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  status      String      @default("ACTIVE")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   suites      TestSuite[]
   testCases   TestCase[]
   testRuns    TestRun[]
@@ -110,19 +110,19 @@ model TestRun {
 }
 
 model TestExecution {
-  id              String     @id @default(cuid())
+  id              String    @id @default(cuid())
   testRunId       String
   testCaseId      String
-  status          String     @default("NOT_RUN")
+  status          String    @default("NOT_RUN")
   assigneeName    String?
   actualResult    String?
   notes           String?
   durationSeconds Int?
   executedAt      DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  testRun         TestRun    @relation(fields: [testRunId], references: [id], onDelete: Cascade)
-  testCase        TestCase   @relation(fields: [testCaseId], references: [id], onDelete: Restrict)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  testRun         TestRun   @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+  testCase        TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Restrict)
   defects         Defect[]
 
   @@unique([testRunId, testCaseId])
