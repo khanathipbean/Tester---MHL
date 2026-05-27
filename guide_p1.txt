@@ -1,0 +1,72 @@
+app/
+
+เก็บ routes ทั้งหมดของ Next.js App Router
+
+เช่น:
+
+app/
+  page.tsx
+  layout.tsx
+  test-cases/
+components/
+
+Reusable UI Components
+
+แยกตาม responsibility:
+
+components/
+  layout/
+  providers/
+  ui/
+ตัวอย่าง
+ui/button.tsx
+layout/sidebar.tsx
+providers/theme-provider.tsx
+hooks/
+
+Custom React Hooks
+
+เช่น:
+
+useDebounce.ts
+usePagination.ts
+lib/
+
+Utility/Helper functions
+
+เช่น:
+
+prisma.ts
+utils.ts
+constants.ts
+services/
+
+Business service layer
+
+เช่น:
+
+test-case.service.ts
+user.service.ts
+
+ตอนนี้ยังไม่ต้อง implement
+
+types/
+
+Global TypeScript types
+
+เช่น:
+
+export interface ApiResponse<T> {}
+validations/
+
+เก็บ Zod schemas
+
+เช่น:
+
+login.schema.ts
+test-case.schema.ts
+prisma/
+
+เก็บ Prisma schema
+
+schema.prisma
