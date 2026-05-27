@@ -146,7 +146,6 @@ export function TestCaseTable({
                             <TableHead className="whitespace-nowrap font-semibold">Expected Result</TableHead>
                             <TableHead className="whitespace-nowrap text-center font-semibold">Priority</TableHead>
                             <TableHead className="whitespace-nowrap text-center font-semibold">Status</TableHead>
-                            <TableHead className="whitespace-nowrap font-semibold">Notes</TableHead>
                             <TableHead className="whitespace-nowrap text-center font-semibold">Defects</TableHead>
                             {(canEdit || canDelete) && <TableHead className="w-12" />}
                         </TableRow>
@@ -212,9 +211,6 @@ export function TestCaseTable({
                                     <Badge variant="outline" className={statusVariant[tc.status] || ""}>
                                         {tc.status}
                                     </Badge>
-                                </TableCell>
-                                <TableCell className="max-w-[150px] truncate text-muted-foreground" title={tc.notes || undefined}>
-                                    {tc.notes || "—"}
                                 </TableCell>
                                 <TableCell className="text-center">
                                     {(tc._count?.defects ?? 0) > 0 ? (
