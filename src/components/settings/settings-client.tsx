@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
@@ -342,10 +342,61 @@ function ThemeSection() {
 // ─── Notifications Section ─────────────────────────────────────
 
 function NotificationsSection() {
-    const [emailNotify, setEmailNotify] = useState(true);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [emailEnabled, setEmailEnabled] = useState(true);
     const [testRunComplete, setTestRunComplete] = useState(true);
     const [defectAssigned, setDefectAssigned] = useState(true);
     const [statusChange, setStatusChange] = useState(false);
+    const [importComplete, setImportComplete] = useState(true);
+
+    useEffect(() => {
+        fetch("/api/settings/notifications")
+            .then((res) => res.json())
+            .then((json) => {
+                if (json.ok) {
+                    const p = json.data;
+                    setEmailEnabled(p.emailEnabled);
+                    setTestRunComplete(p.testRunComplete);
+                    setDefectAssigned(p.defectAssigned);
+                    setStatusChange(p.statusChange);
+                    setImportComplete(p.importComplete);
+                }
+            })
+            .finally(() => setLoading(false));
+    }, []);
+
+    const savePrefs = async (field: string, value: boolean) => {
+        setSaving(true);
+        try {
+            const res = await fetch("/api/settings/notifications", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ [field]: value }),
+            });
+            if (res.ok) {
+                toast.success("Notification preference saved");
+            }
+        } catch {
+            toast.error("Failed to save preference");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Notifications</CardTitle>
+                    <CardDescription>Configure how you receive notifications</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center py-8">
+                    <p className="text-sm text-muted-foreground">Loading...</p>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card>
@@ -360,7 +411,11 @@ function NotificationsSection() {
                             <p className="font-medium text-sm">Email Notifications</p>
                             <p className="text-xs text-muted-foreground">Receive notifications via email</p>
                         </div>
-                        <Switch checked={emailNotify} onCheckedChange={setEmailNotify} />
+                        <Switch
+                            checked={emailEnabled}
+                            disabled={saving}
+                            onCheckedChange={(v) => { setEmailEnabled(v); savePrefs("emailEnabled", v); }}
+                        />
                     </div>
 
                     <Separator />
@@ -370,7 +425,11 @@ function NotificationsSection() {
                             <p className="font-medium text-sm">Test Run Completed</p>
                             <p className="text-xs text-muted-foreground">Notify when a test run finishes</p>
                         </div>
-                        <Switch checked={testRunComplete} onCheckedChange={setTestRunComplete} />
+                        <Switch
+                            checked={testRunComplete}
+                            disabled={saving}
+                            onCheckedChange={(v) => { setTestRunComplete(v); savePrefs("testRunComplete", v); }}
+                        />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -378,7 +437,11 @@ function NotificationsSection() {
                             <p className="font-medium text-sm">Defect Assigned</p>
                             <p className="text-xs text-muted-foreground">Notify when a defect is assigned to you</p>
                         </div>
-                        <Switch checked={defectAssigned} onCheckedChange={setDefectAssigned} />
+                        <Switch
+                            checked={defectAssigned}
+                            disabled={saving}
+                            onCheckedChange={(v) => { setDefectAssigned(v); savePrefs("defectAssigned", v); }}
+                        />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -386,13 +449,25 @@ function NotificationsSection() {
                             <p className="font-medium text-sm">Test Case Status Change</p>
                             <p className="text-xs text-muted-foreground">Notify on pass/fail status changes</p>
                         </div>
-                        <Switch checked={statusChange} onCheckedChange={setStatusChange} />
+                        <Switch
+                            checked={statusChange}
+                            disabled={saving}
+                            onCheckedChange={(v) => { setStatusChange(v); savePrefs("statusChange", v); }}
+                        />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="font-medium text-sm">Import Complete</p>
+                            <p className="text-xs text-muted-foreground">Notify when file import finishes</p>
+                        </div>
+                        <Switch
+                            checked={importComplete}
+                            disabled={saving}
+                            onCheckedChange={(v) => { setImportComplete(v); savePrefs("importComplete", v); }}
+                        />
                     </div>
                 </div>
-
-                <p className="text-xs text-muted-foreground italic">
-                    Note: Notification delivery will be available in a future update.
-                </p>
             </CardContent>
         </Card>
     );

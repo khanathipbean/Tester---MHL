@@ -50,3 +50,6 @@ next-env.d.ts
 /dev.db-journal
 /dev.db-wal
 /dev.db-shm
+
+# Local Netlify folder
+.netlify
