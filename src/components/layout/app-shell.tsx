@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { SidebarProvider, useSidebar } from "@/components/layout/sidebar-context";
 import { SidebarToggle } from "@/components/layout/sidebar-toggle";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 
 export function AppShell({
@@ -37,6 +38,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
           <Breadcrumb />
         </div>
         <div className="flex items-center gap-1">
+          <NotificationBell />
           <ThemeToggle />
         </div>
       </header>

@@ -84,28 +84,30 @@ export function TestCasesClient({
     const [autoTagging, setAutoTagging] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    // Derive filters directly from URL search params
-    const projectFilter = searchParams.get("project") || "all";
-    const statusFilter = searchParams.get("status") || "all";
-    const moduleFilter = searchParams.get("module") || "all";
-    const priorityFilter = searchParams.get("priority") || "all";
-    const page = Number(searchParams.get("page")) || 1;
-    const pageSize = Number(searchParams.get("size")) || DEFAULT_PAGE_SIZE;
+    // Local filter state (client-side only, no server re-render)
+    const [projectFilter, setProjectFilter] = useState(searchParams.get("project") || "all");
+    const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
+    const [moduleFilter, setModuleFilter] = useState(searchParams.get("module") || "all");
+    const [priorityFilter, setPriorityFilter] = useState(searchParams.get("priority") || "all");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const { value: searchValue, setValue: setSearch } = useDebouncedValue(searchParams.get("q") || "", 300);
 
-    // Update URL search params (source of truth for filters)
-    const updateFilters = useCallback((params: Record<string, string>) => {
-        const sp = new URLSearchParams(searchParams.toString());
+    // Sync filters to URL without triggering server navigation
+    const syncUrl = useCallback((params: Record<string, string>) => {
+        const sp = new URLSearchParams(window.location.search);
         for (const [key, value] of Object.entries(params)) {
-            if (value && value !== "all" && value !== "1" && value !== String(DEFAULT_PAGE_SIZE)) {
+            if (value && value !== "all") {
                 sp.set(key, value);
             } else {
                 sp.delete(key);
             }
         }
+        sp.delete("page");
+        sp.delete("size");
         const qs = sp.toString();
-        router.replace(`/test-cases${qs ? `?${qs}` : ""}`, { scroll: false });
-    }, [searchParams, router]);
+        window.history.replaceState(null, "", `/test-cases${qs ? `?${qs}` : ""}`);
+    }, []);
     const filteredModules = useMemo(() => {
         if (projectFilter === "all") return modules;
         return modules.filter((m) => m.projectId === projectFilter);
@@ -199,7 +201,7 @@ export function TestCasesClient({
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateFilters({ project: "all", module: "all", page: "1", q: "" })}
+                            onClick={() => { setPage(1); setProjectFilter("all"); setModuleFilter("all"); setSearch(""); syncUrl({ project: "all", module: "all", q: "" }); }}
                         >
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
@@ -302,7 +304,7 @@ export function TestCasesClient({
                         <Card
                             key={p.id}
                             className="cursor-pointer transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5"
-                            onClick={() => updateFilters({ project: p.id, page: "1" })}
+                            onClick={() => { setPage(1); setProjectFilter(p.id); syncUrl({ project: p.id }); }}
                         >
                             <CardContent className="p-5">
                                 <div className="flex items-start gap-3">
@@ -340,17 +342,17 @@ export function TestCasesClient({
                         <TestCaseFilters
                             projects={projects}
                             projectFilter={projectFilter}
-                            onProjectChange={(v) => { updateFilters({ project: v, module: "all", page: "1" }); }}
+                            onProjectChange={(v) => { setPage(1); setProjectFilter(v); setModuleFilter("all"); syncUrl({ project: v, module: "all" }); }}
                             modules={filteredModules}
                             search={searchValue}
-                            onSearchChange={(v) => { setSearch(v); updateFilters({ q: v, page: "1" }); }}
+                            onSearchChange={(v) => { setSearch(v); setPage(1); syncUrl({ q: v }); }}
                             statusFilter={statusFilter}
-                            onStatusChange={(v) => { updateFilters({ status: v, page: "1" }); }}
+                            onStatusChange={(v) => { setPage(1); setStatusFilter(v); syncUrl({ status: v }); }}
                             moduleFilter={moduleFilter}
-                            onModuleChange={(v) => { updateFilters({ module: v, page: "1" }); }}
+                            onModuleChange={(v) => { setPage(1); setModuleFilter(v); syncUrl({ module: v }); }}
                             priorityFilter={priorityFilter}
-                            onPriorityChange={(v) => { updateFilters({ priority: v, page: "1" }); }}
-                            onClearFilters={() => { setSearch(""); updateFilters({ q: "", status: "all", module: "all", priority: "all", page: "1" }); }}
+                            onPriorityChange={(v) => { setPage(1); setPriorityFilter(v); syncUrl({ priority: v }); }}
+                            onClearFilters={() => { setSearch(""); setPage(1); setStatusFilter("all"); setModuleFilter("all"); setPriorityFilter("all"); syncUrl({ q: "", status: "all", module: "all", priority: "all" }); }}
                         />
                         <p className="shrink-0 text-sm text-muted-foreground">
                             Result : {filtered.length}
@@ -370,10 +372,10 @@ export function TestCasesClient({
                     <Pagination
                         page={page}
                         totalPages={totalPages}
-                        onPageChange={(p) => { updateFilters({ page: String(p) }); }}
+                        onPageChange={(p) => { setPage(p); }}
                         total={filtered.length}
                         pageSize={pageSize}
-                        onPageSizeChange={(size) => { updateFilters({ size: String(size), page: "1" }); }}
+                        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
                     />
                 </>
             )}
