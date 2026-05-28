@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, useTransition, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Sparkles, Upload, ArrowLeft, FolderOpen, Layers3, FileText } from "lucide-react";
+import { Plus, Sparkles, Upload, ArrowLeft, FolderOpen, Layers3, FileText, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -82,6 +82,7 @@ export function TestCasesClient({
     const [createOpen, setCreateOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [autoTagging, setAutoTagging] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     // Derive filters directly from URL search params
     const projectFilter = searchParams.get("project") || "all";
@@ -151,6 +152,7 @@ export function TestCasesClient({
         formData.append("file", file);
         formData.append("projectId", targetProjectId);
 
+        setUploading(true);
         try {
             const res = await fetch("/api/test-cases/import", {
                 method: "POST",
@@ -171,7 +173,7 @@ export function TestCasesClient({
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : "Import failed");
         } finally {
-            // Reset file input
+            setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
@@ -256,10 +258,14 @@ export function TestCasesClient({
                             size="sm"
                             variant="outline"
                             onClick={() => fileInputRef.current?.click()}
-                            disabled={isPending}
+                            disabled={isPending || uploading}
                         >
-                            <Upload className="h-4 w-4 sm:mr-2" />
-                            <span className="hidden sm:inline">Import Excel | CSV</span>
+                            {uploading ? (
+                                <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+                            ) : (
+                                <Upload className="h-4 w-4 sm:mr-2" />
+                            )}
+                            <span className="hidden sm:inline">{uploading ? "กำลังอัปโหลด..." : "Import Excel | CSV"}</span>
                         </Button>
                         <input
                             ref={fileInputRef}
@@ -277,6 +283,19 @@ export function TestCasesClient({
             </div>
 
             {/* Project Cards - shown when no project selected */}
+            {/* Upload overlay */}
+            {uploading && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-4 rounded-xl border bg-card p-8 shadow-lg">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        <div className="text-center">
+                            <p className="text-lg font-medium">กำลังนำเข้าไฟล์...</p>
+                            <p className="text-sm text-muted-foreground mt-1">กรุณารอสักครู่ ระบบกำลังประมวลผลข้อมูล</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {projectFilter === "all" ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {projectStats.map((p) => (
