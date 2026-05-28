@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { loginSchema, type LoginInput } from "@/validations/auth";
@@ -12,6 +13,7 @@ import { loginSchema, type LoginInput } from "@/validations/auth";
 export function LoginForm() {
     const router = useRouter();
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const {
         register,
@@ -20,6 +22,8 @@ export function LoginForm() {
     } = useForm<LoginInput>({
         resolver: zodResolver(loginSchema),
     });
+
+    const loading = isSubmitting || isLoading;
 
     async function onSubmit(data: LoginInput) {
         setError(null);
@@ -35,6 +39,7 @@ export function LoginForm() {
             return;
         }
 
+        setIsLoading(true);
         router.push("/");
         router.refresh();
     }
@@ -87,8 +92,9 @@ export function LoginForm() {
                 </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Signing in..." : "Sign in"}
+            <Button type="submit" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {loading ? "กำลังเข้าสู่ระบบ..." : "Sign in"}
             </Button>
         </form>
     );
