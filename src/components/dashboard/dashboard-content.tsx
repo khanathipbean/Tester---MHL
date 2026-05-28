@@ -145,7 +145,7 @@ export function DashboardContent({ data }: DashboardContentProps) {
         }
 
         return {
-            totalTestCases: (projectFilter === "all" && moduleFilter === "all" && priorityFilter === "all") ? data.totalTestCases : totalTestCases,
+            totalTestCases: passed + failed + notRun + blocked,
             passed: displayPassed,
             failed: displayFailed,
             notRun: displayNotRun,

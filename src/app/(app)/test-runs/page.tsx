@@ -13,7 +13,7 @@ export default async function TestRunsPage() {
 
     const role = user.role as "ADMIN" | "QA" | "VIEWER";
 
-    const [projects, testRuns, testCases, tags] = await Promise.all([
+    const [projects, testRuns, testCases, tags, modules] = await Promise.all([
         prisma.project.findMany({
             orderBy: { createdAt: "asc" },
             select: { id: true, name: true, key: true },
@@ -25,12 +25,16 @@ export default async function TestRunsPage() {
             },
         }),
         prisma.testCase.findMany({
-            select: { id: true, key: true, title: true, status: true, projectId: true, tags: { include: { tag: true } } },
+            select: { id: true, key: true, title: true, status: true, projectId: true, suiteId: true, tags: { include: { tag: true } } },
             orderBy: { key: "asc" },
         }),
         prisma.tag.findMany({
             orderBy: { name: "asc" },
             select: { id: true, name: true, color: true, projectId: true },
+        }),
+        prisma.testSuite.findMany({
+            orderBy: { name: "asc" },
+            select: { id: true, name: true, projectId: true },
         }),
     ]);
 
@@ -77,6 +81,7 @@ export default async function TestRunsPage() {
                 testCases={testCasesWithTags}
                 projects={projects}
                 tags={tags}
+                modules={modules}
                 canEdit={role === "ADMIN" || role === "QA"}
                 canDelete={role === "ADMIN"}
             />

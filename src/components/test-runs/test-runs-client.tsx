@@ -57,6 +57,7 @@ interface TestCase {
     title: string;
     status: string;
     projectId: string;
+    suiteId: string | null;
     tags?: { id: string; name: string; color: string | null }[];
 }
 
@@ -73,11 +74,18 @@ interface Tag {
     projectId: string;
 }
 
+interface Module {
+    id: string;
+    name: string;
+    projectId: string;
+}
+
 interface TestRunsClientProps {
     testRuns: TestRun[];
     testCases: TestCase[];
     projects: ProjectOption[];
     tags: Tag[];
+    modules: Module[];
     canEdit: boolean;
     canDelete: boolean;
 }
@@ -89,7 +97,7 @@ const statusStyle: Record<string, string> = {
     ABORTED: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300",
 };
 
-export function TestRunsClient({ testRuns, testCases, projects, tags, canEdit, canDelete }: TestRunsClientProps) {
+export function TestRunsClient({ testRuns, testCases, projects, tags, modules, canEdit, canDelete }: TestRunsClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [createOpen, setCreateOpen] = useState(false);
@@ -102,6 +110,7 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, canEdit, c
     const [createProjectId, setCreateProjectId] = useState(projects[0]?.id || "");
     const [createSearch, setCreateSearch] = useState("");
     const [createTagFilter, setCreateTagFilter] = useState("all");
+    const [createModuleFilter, setCreateModuleFilter] = useState("all");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editNameId, setEditNameId] = useState<string | null>(null);
     const [editNameValue, setEditNameValue] = useState("");
@@ -119,6 +128,9 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, canEdit, c
 
     const filteredTestCases = useMemo(() => {
         let cases = testCases.filter((tc) => tc.projectId === createProjectId);
+        if (createModuleFilter !== "all") {
+            cases = cases.filter((tc) => tc.suiteId === createModuleFilter);
+        }
         if (createSearch) {
             const q = createSearch.toLowerCase();
             cases = cases.filter((tc) => tc.key.toLowerCase().includes(q) || tc.title.toLowerCase().includes(q));
@@ -127,11 +139,15 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, canEdit, c
             cases = cases.filter((tc) => tc.tags?.some((t) => t.id === createTagFilter));
         }
         return cases;
-    }, [testCases, createProjectId, createSearch, createTagFilter]);
+    }, [testCases, createProjectId, createSearch, createTagFilter, createModuleFilter]);
 
     const projectTags = useMemo(() => {
         return tags.filter((t) => t.projectId === createProjectId);
     }, [tags, createProjectId]);
+
+    const projectModules = useMemo(() => {
+        return modules.filter((m) => m.projectId === createProjectId);
+    }, [modules, createProjectId]);
 
     const handleCreate = async () => {
         if (!name.trim() || selectedCases.length === 0) {
@@ -444,7 +460,7 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, canEdit, c
                     <div className="space-y-4 flex-1 overflow-y-auto">
                         <div className="space-y-2">
                             <Label>Project</Label>
-                            <Select value={createProjectId} onValueChange={(v) => { setCreateProjectId(v); setSelectedCases([]); setCreateSearch(""); setCreateTagFilter("all"); }}>
+                            <Select value={createProjectId} onValueChange={(v) => { setCreateProjectId(v); setSelectedCases([]); setCreateSearch(""); setCreateTagFilter("all"); setCreateModuleFilter("all"); }}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select project" />
                                 </SelectTrigger>
@@ -492,24 +508,39 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, canEdit, c
                                     onChange={(e) => setCreateSearch(e.target.value)}
                                 />
                             </div>
-                            {projectTags.length > 0 && (
-                                <Select value={createTagFilter} onValueChange={setCreateTagFilter}>
-                                    <SelectTrigger className="h-8 text-xs">
-                                        <SelectValue placeholder="Filter by tag" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Tags</SelectItem>
-                                        {projectTags.map((tag) => (
-                                            <SelectItem key={tag.id} value={tag.id}>
-                                                <span className="flex items-center gap-1.5">
-                                                    <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: tag.color || "#6b7280" }} />
-                                                    {tag.name}
-                                                </span>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
+                            <div className="flex gap-2">
+                                {projectModules.length > 0 && (
+                                    <Select value={createModuleFilter} onValueChange={setCreateModuleFilter}>
+                                        <SelectTrigger className="h-8 text-xs">
+                                            <SelectValue placeholder="Filter by module" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Modules</SelectItem>
+                                            {projectModules.map((m) => (
+                                                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                                {projectTags.length > 0 && (
+                                    <Select value={createTagFilter} onValueChange={setCreateTagFilter}>
+                                        <SelectTrigger className="h-8 text-xs">
+                                            <SelectValue placeholder="Filter by tag" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Tags</SelectItem>
+                                            {projectTags.map((tag) => (
+                                                <SelectItem key={tag.id} value={tag.id}>
+                                                    <span className="flex items-center gap-1.5">
+                                                        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: tag.color || "#6b7280" }} />
+                                                        {tag.name}
+                                                    </span>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </div>
                             <div className="max-h-48 overflow-y-auto rounded-md border p-2 space-y-1">
                                 {filteredTestCases.map((tc) => (
                                     <label key={tc.id} className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted text-sm cursor-pointer">
