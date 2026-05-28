@@ -191,23 +191,6 @@ export async function POST(req: NextRequest) {
         }
     }
 
-    // Create notification for import complete
-    const usersToNotify = await prisma.notificationPreference.findMany({
-        where: { importComplete: true },
-        select: { userId: true },
-    });
-    if (usersToNotify.length > 0) {
-        await prisma.notification.createMany({
-            data: usersToNotify.map((u) => ({
-                userId: u.userId,
-                type: "IMPORT_COMPLETE",
-                title: "Import Complete",
-                message: `Imported ${created} test cases${updated > 0 ? `, updated ${updated}` : ""}.`,
-                link: `/test-cases`,
-            })),
-        });
-    }
-
     return NextResponse.json({
         data: { created, updated, skipped, modulesCreated, newModuleNames, total: dataRows.length, errors: errors.slice(0, 20) },
         message: `Imported ${created} test cases. Updated ${updated}.${skipped > 0 ? ` Skipped ${skipped}.` : ""}${modulesCreated > 0 ? ` Created ${modulesCreated} new module(s).` : ""}`,

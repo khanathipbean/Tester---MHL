@@ -180,42 +180,14 @@ model TestCaseTag {
 }
 
 model User {
-  id            String                   @id @default(cuid())
-  name          String
-  email         String                   @unique
-  password      String
-  role          String                   @default("QA")
-  createdAt     DateTime                 @default(now())
-  updatedAt     DateTime                 @updatedAt
-  notifications Notification[]
-  notifPrefs    NotificationPreference?
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("QA")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([role])
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String   // TEST_RUN_COMPLETE, DEFECT_ASSIGNED, STATUS_CHANGE, IMPORT_COMPLETE
-  title     String
-  message   String
-  read      Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, read])
-  @@index([userId, createdAt])
-}
-
-model NotificationPreference {
-  id              String  @id @default(cuid())
-  userId          String  @unique
-  emailEnabled    Boolean @default(true)
-  testRunComplete Boolean @default(true)
-  defectAssigned  Boolean @default(true)
-  statusChange    Boolean @default(false)
-  importComplete  Boolean @default(true)
-  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

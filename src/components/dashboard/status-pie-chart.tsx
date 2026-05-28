@@ -1,7 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from "recharts";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -124,15 +124,17 @@ const STATUS_LABEL: Record<string, string> = {
 export function StatusPieChart({ passed, failed, notRun, blocked, activeStatus, onStatusClick, priorityBreakdown }: StatusPieChartProps) {
     const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
     const [expandedStatus, setExpandedStatus] = useState<string | null>(null);
+    const [prevActiveStatus, setPrevActiveStatus] = useState(activeStatus);
 
-    // Sync breakdown panel with external filter changes
-    useEffect(() => {
+    // Sync breakdown panel with external filter changes (during render, not in effect)
+    if (activeStatus !== prevActiveStatus) {
+        setPrevActiveStatus(activeStatus);
         if (activeStatus === "all") {
             setExpandedStatus(null);
         } else if (expandedStatus && activeStatus !== expandedStatus) {
             setExpandedStatus(activeStatus ?? null);
         }
-    }, [activeStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+    }
 
     const data = [
         { name: "Passed", value: passed },
