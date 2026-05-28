@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db/prisma";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 
+export const dynamic = "force-dynamic";
+
 async function getDashboardData() {
   const [projects, testCasesByProject, moduleSummaries] = await Promise.all([
     prisma.project.findMany({
