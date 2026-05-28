@@ -83,10 +83,28 @@ export async function PATCH(
         });
         const allDone = allExecs.every((e) => e.status !== "NOT_RUN");
         if (allDone) {
-            await prisma.testRun.update({
+            const completedRun = await prisma.testRun.update({
                 where: { id },
                 data: { status: "COMPLETED", completedAt: new Date() },
+                select: { id: true, name: true, projectId: true },
             });
+
+            // Create notification for all users with testRunComplete preference
+            const usersToNotify = await prisma.notificationPreference.findMany({
+                where: { testRunComplete: true },
+                select: { userId: true },
+            });
+            if (usersToNotify.length > 0) {
+                await prisma.notification.createMany({
+                    data: usersToNotify.map((u) => ({
+                        userId: u.userId,
+                        type: "TEST_RUN_COMPLETE",
+                        title: "Test Run Completed",
+                        message: `"${completedRun.name}" has been completed.`,
+                        link: `/test-runs/${completedRun.id}`,
+                    })),
+                });
+            }
         } else {
             // Auto-transition from PLANNED to IN_PROGRESS on first execution
             const run = await prisma.testRun.findUnique({ where: { id }, select: { status: true } });
@@ -115,7 +133,28 @@ export async function PATCH(
         const testRun = await prisma.testRun.update({
             where: { id },
             data: { status: body.status, completedAt: body.status === "COMPLETED" ? new Date() : undefined },
+            select: { id: true, name: true, status: true, projectId: true, completedAt: true, createdAt: true, updatedAt: true },
         });
+
+        // Notify on manual completion
+        if (body.status === "COMPLETED") {
+            const usersToNotify = await prisma.notificationPreference.findMany({
+                where: { testRunComplete: true },
+                select: { userId: true },
+            });
+            if (usersToNotify.length > 0) {
+                await prisma.notification.createMany({
+                    data: usersToNotify.map((u) => ({
+                        userId: u.userId,
+                        type: "TEST_RUN_COMPLETE",
+                        title: "Test Run Completed",
+                        message: `"${testRun.name}" has been completed.`,
+                        link: `/test-runs/${testRun.id}`,
+                    })),
+                });
+            }
+        }
+
         return NextResponse.json({ data: testRun });
     }
 
