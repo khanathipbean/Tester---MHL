@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect, notFound } from "next/navigation";
@@ -29,29 +30,39 @@ const getTestCase = cache((id: string) =>
     })
 );
 
+const getCachedTestCase = (id: string) =>
+    unstable_cache(
+        () => getTestCase(id),
+        [`test-case-${id}`],
+        { revalidate: 30, tags: [`test-case-${id}`] }
+    )();
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const tc = await getTestCase(id);
+    const tc = await getCachedTestCase(id);
     return { title: tc ? `${tc.key} - ${tc.title}` : "Test Case" };
 }
 
 export default async function TestCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const user = await getCurrentUser();
-    if (!user) redirect("/login");
-
     const { id } = await params;
 
-    const testCase = await getTestCase(id);
+    const [user, testCase] = await Promise.all([
+        getCurrentUser(),
+        getCachedTestCase(id),
+    ]);
 
+    if (!user) redirect("/login");
     if (!testCase) notFound();
 
     const serialized = {
         ...testCase,
-        createdAt: testCase.createdAt.toISOString(),
-        updatedAt: testCase.updatedAt.toISOString(),
+        createdAt: typeof testCase.createdAt === "string" ? testCase.createdAt : testCase.createdAt.toISOString(),
+        updatedAt: typeof testCase.updatedAt === "string" ? testCase.updatedAt : testCase.updatedAt.toISOString(),
         executions: testCase.executions.map((e) => ({
             ...e,
-            executedAt: e.executedAt?.toISOString() || null,
+            executedAt: e.executedAt
+                ? (typeof e.executedAt === "string" ? e.executedAt : e.executedAt.toISOString())
+                : null,
         })),
     };
 

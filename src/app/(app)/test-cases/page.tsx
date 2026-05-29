@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
@@ -8,40 +9,49 @@ export const metadata = {
     title: "Test Cases",
 };
 
+const getTestCasesData = unstable_cache(
+    () =>
+        Promise.all([
+            prisma.project.findMany({
+                orderBy: { createdAt: "asc" },
+                select: { id: true, name: true, key: true },
+            }),
+            prisma.testCase.findMany({
+                orderBy: { key: "asc" },
+                include: {
+                    suite: { select: { id: true, name: true } },
+                    tags: { include: { tag: true } },
+                    _count: { select: { steps: true, executions: true, defects: true } },
+                },
+            }),
+            prisma.testSuite.findMany({
+                select: { id: true, name: true, projectId: true },
+                orderBy: { name: "asc" },
+            }),
+            prisma.tag.findMany({
+                orderBy: { name: "asc" },
+                select: { id: true, name: true, color: true, projectId: true },
+            }),
+        ]),
+    ["test-cases-list"],
+    { revalidate: 30, tags: ["test-cases"] }
+);
+
 export default async function TestCasesPage() {
-    const user = await getCurrentUser();
+    const [user, [projects, testCases, modules, tags]] = await Promise.all([
+        getCurrentUser(),
+        getTestCasesData(),
+    ]);
+
     if (!user) redirect("/login");
 
     const role = user.role as "ADMIN" | "QA" | "VIEWER";
 
-    const [projects, testCases, modules, tags] = await Promise.all([
-        prisma.project.findMany({
-            orderBy: { createdAt: "asc" },
-            select: { id: true, name: true, key: true },
-        }),
-        prisma.testCase.findMany({
-            orderBy: { key: "asc" },
-            include: {
-                suite: { select: { id: true, name: true } },
-                tags: { include: { tag: true } },
-                _count: { select: { steps: true, executions: true, defects: true } },
-            },
-        }),
-        prisma.testSuite.findMany({
-            select: { id: true, name: true, projectId: true },
-            orderBy: { name: "asc" },
-        }),
-        prisma.tag.findMany({
-            orderBy: { name: "asc" },
-            select: { id: true, name: true, color: true, projectId: true },
-        }),
-    ]);
-
     const serializedCases = testCases.map((tc) => ({
         ...tc,
         tags: tc.tags.map((t) => t.tag),
-        createdAt: tc.createdAt.toISOString(),
-        updatedAt: tc.updatedAt.toISOString(),
+        createdAt: typeof tc.createdAt === "string" ? tc.createdAt : tc.createdAt.toISOString(),
+        updatedAt: typeof tc.updatedAt === "string" ? tc.updatedAt : tc.updatedAt.toISOString(),
     }));
 
     return (
