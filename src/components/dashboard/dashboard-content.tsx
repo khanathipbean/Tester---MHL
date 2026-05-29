@@ -145,7 +145,7 @@ export function DashboardContent({ data }: DashboardContentProps) {
         }
 
         return {
-            totalTestCases: passed + failed + notRun + blocked,
+            totalTestCases: displayPassed + displayFailed + displayNotRun + displayBlocked,
             passed: displayPassed,
             failed: displayFailed,
             notRun: displayNotRun,
