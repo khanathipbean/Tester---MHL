@@ -387,7 +387,10 @@ function ModuleRowGroup({
             <Dialog open={!!selectedTC} onOpenChange={(open) => { if (!open) setSelectedTC(null); }}>
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
-                        <DialogTitle className="font-mono text-base">{selectedTC?.key}</DialogTitle>
+                        <DialogTitle className="font-mono text-lg font-bold">{selectedTC?.key}</DialogTitle>
+                        {selectedTC?.expectedResult && (
+                            <p className="text-sm font-medium mt-1.5 whitespace-pre-line border-l-4 border-primary pl-3">{selectedTC.expectedResult}</p>
+                        )}
                     </DialogHeader>
                     {selectedTC && (
                         <div className="space-y-3 text-sm">
@@ -414,10 +417,6 @@ function ModuleRowGroup({
                             <div>
                                 <span className="font-semibold text-muted-foreground">Test Steps</span>
                                 <p className="mt-1 whitespace-pre-line rounded bg-muted/50 p-2">{selectedTC.testSteps || "—"}</p>
-                            </div>
-                            <div>
-                                <span className="font-semibold text-muted-foreground">Expected Result</span>
-                                <p className="mt-1 whitespace-pre-line rounded bg-muted/50 p-2">{selectedTC.expectedResult || "—"}</p>
                             </div>
                             <div>
                                 <span className="font-semibold text-muted-foreground">Notes</span>
