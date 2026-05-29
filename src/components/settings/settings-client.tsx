@@ -16,6 +16,7 @@ import {
     Moon,
     Sparkles,
     Save,
+    Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,8 @@ export function SettingsClient({ user, isAdmin }: SettingsClientProps) {
 function ProfileSection({ user }: { user: SettingsClientProps["user"] }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [submitting, setSubmitting] = useState(false);
+    const busy = isPending || submitting;
     const [name, setName] = useState(user.name);
     const [email, setEmail] = useState(user.email);
 
@@ -129,6 +132,7 @@ function ProfileSection({ user }: { user: SettingsClientProps["user"] }) {
         if (!name.trim()) { toast.error("Name is required"); return; }
         if (!email.trim()) { toast.error("Email is required"); return; }
 
+        setSubmitting(true);
         try {
             const res = await fetch("/api/settings/profile", {
                 method: "PATCH",
@@ -143,6 +147,8 @@ function ProfileSection({ user }: { user: SettingsClientProps["user"] }) {
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to update profile");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -194,9 +200,9 @@ function ProfileSection({ user }: { user: SettingsClientProps["user"] }) {
                 </div>
 
                 <div className="flex justify-end">
-                    <Button onClick={handleSave} disabled={isPending}>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Changes
+                    <Button onClick={handleSave} disabled={busy}>
+                        {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {busy ? "Saving..." : "Save Changes"}
                     </Button>
                 </div>
             </CardContent>
@@ -208,6 +214,8 @@ function ProfileSection({ user }: { user: SettingsClientProps["user"] }) {
 
 function PasswordSection() {
     const [isPending, startTransition] = useTransition();
+    const [submitting, setSubmitting] = useState(false);
+    const busy = isPending || submitting;
     const router = useRouter();
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -218,6 +226,7 @@ function PasswordSection() {
         if (!newPassword || newPassword.length < 6) { toast.error("New password must be at least 6 characters"); return; }
         if (newPassword !== confirmPassword) { toast.error("Passwords do not match"); return; }
 
+        setSubmitting(true);
         try {
             const res = await fetch("/api/settings/password", {
                 method: "PATCH",
@@ -234,6 +243,8 @@ function PasswordSection() {
             setConfirmPassword("");
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to change password");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -278,9 +289,9 @@ function PasswordSection() {
                 </div>
 
                 <div className="flex justify-end">
-                    <Button onClick={handleChange} disabled={isPending}>
-                        <Lock className="mr-2 h-4 w-4" />
-                        Change Password
+                    <Button onClick={handleChange} disabled={busy}>
+                        {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
+                        {busy ? "Saving..." : "Change Password"}
                     </Button>
                 </div>
             </CardContent>

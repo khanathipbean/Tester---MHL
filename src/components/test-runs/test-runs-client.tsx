@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Play, Trash2, CheckCircle, Search, X, ListChecks, Clock, Ban, PlayCircle, Pencil } from "lucide-react";
+import { Plus, Play, Trash2, CheckCircle, Search, X, ListChecks, Clock, Ban, PlayCircle, Pencil, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -100,6 +100,8 @@ const statusStyle: Record<string, string> = {
 export function TestRunsClient({ testRuns, testCases, projects, tags, modules, canEdit, canDelete }: TestRunsClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [submitting, setSubmitting] = useState(false);
+    const busy = isPending || submitting;
     const [createOpen, setCreateOpen] = useState(false);
     const [name, setName] = useState("");
     const [environment, setEnvironment] = useState("");
@@ -154,6 +156,7 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, modules, c
             toast.error("Name and at least one test case are required");
             return;
         }
+        setSubmitting(true);
         try {
             const res = await fetch("/api/test-runs", {
                 method: "POST",
@@ -169,10 +172,13 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, modules, c
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to create");
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleDelete = async (id: string) => {
+        setSubmitting(true);
         try {
             const res = await fetch(`/api/test-runs/${id}`, { method: "DELETE" });
             if (!res.ok) throw new Error((await res.json()).message);
@@ -181,11 +187,14 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, modules, c
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to delete");
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleEditName = async () => {
         if (!editNameValue.trim() || !editNameId) { toast.error("Name is required"); return; }
+        setSubmitting(true);
         try {
             const res = await fetch(`/api/test-runs/${editNameId}`, {
                 method: "PATCH",
@@ -198,6 +207,8 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, modules, c
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to update name");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -421,9 +432,10 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, modules, c
                         <Button
                             variant="destructive"
                             onClick={() => deleteId && handleDelete(deleteId)}
-                            disabled={isPending}
+                            disabled={busy}
                         >
-                            Delete
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Deleting..." : "Delete"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -445,7 +457,10 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, modules, c
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setEditNameId(null)}>Cancel</Button>
-                        <Button onClick={handleEditName} disabled={isPending}>Save</Button>
+                        <Button onClick={handleEditName} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Saving..." : "Save"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -569,8 +584,9 @@ export function TestRunsClient({ testRuns, testCases, projects, tags, modules, c
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreate} disabled={isPending}>
-                            {isPending ? "Creating..." : "Create"}
+                        <Button onClick={handleCreate} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Creating..." : "Create"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

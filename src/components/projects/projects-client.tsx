@@ -11,6 +11,7 @@ import {
     Trash2,
     FolderPlus,
     Layers3,
+    Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,8 @@ interface ProjectsClientProps {
 export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [submitting, setSubmitting] = useState(false);
+    const busy = isPending || submitting;
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
     // Project form
@@ -113,6 +116,7 @@ export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientP
             toast.error("Project name is required");
             return;
         }
+        setSubmitting(true);
         try {
             if (editProject) {
                 const res = await fetch(`/api/projects/${editProject.id}`, {
@@ -135,6 +139,8 @@ export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientP
             startTransition(() => router.refresh());
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : "Failed");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -160,6 +166,7 @@ export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientP
             toast.error("Module name is required");
             return;
         }
+        setSubmitting(true);
         try {
             if (editModule) {
                 const res = await fetch(`/api/modules/${editModule.id}`, {
@@ -182,12 +189,15 @@ export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientP
             startTransition(() => router.refresh());
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : "Failed");
+        } finally {
+            setSubmitting(false);
         }
     };
 
     // Delete
     const handleDelete = async () => {
         if (!deleteTarget) return;
+        setSubmitting(true);
         try {
             const url = deleteTarget.type === "project"
                 ? `/api/projects/${deleteTarget.id}`
@@ -199,6 +209,8 @@ export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientP
             startTransition(() => router.refresh());
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : "Failed to delete");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -411,8 +423,9 @@ export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientP
                         <Button variant="outline" onClick={() => setProjectFormOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleProjectSubmit} disabled={isPending}>
-                            {editProject ? "Update" : "Create"}
+                        <Button onClick={handleProjectSubmit} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Saving..." : editProject ? "Update" : "Create"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -452,8 +465,9 @@ export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientP
                         <Button variant="outline" onClick={() => setModuleFormOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleModuleSubmit} disabled={isPending}>
-                            {editModule ? "Update" : "Add"}
+                        <Button onClick={handleModuleSubmit} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Saving..." : editModule ? "Update" : "Add"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -474,8 +488,9 @@ export function ProjectsClient({ projects, canEdit, canDelete }: ProjectsClientP
                         <Button variant="outline" onClick={() => setDeleteTarget(null)}>
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-                            Delete
+                        <Button variant="destructive" onClick={handleDelete} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Deleting..." : "Delete"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

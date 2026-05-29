@@ -9,6 +9,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { useModules } from "@/hooks/use-modules";
 
 interface DeleteModuleModalProps {
@@ -53,6 +54,7 @@ export function DeleteModuleModal({
                         onClick={handleDelete}
                         disabled={isLoading}
                     >
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isLoading ? "Deleting..." : "Delete"}
                     </Button>
                 </DialogFooter>

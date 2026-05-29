@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search, X, ChevronsUpDown, Check, ExternalLink, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X, ChevronsUpDown, Check, ExternalLink, FileText, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +117,8 @@ const defectStatusStyle: Record<string, string> = {
 export function DefectsClient({ defects, testCases, projects, tags, canEdit, canDelete }: DefectsClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [submitting, setSubmitting] = useState(false);
+    const busy = isPending || submitting;
     const [formOpen, setFormOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Defect | null>(null);
     const [viewTestCase, setViewTestCase] = useState<Defect["testCase"] | null>(null);
@@ -216,6 +218,7 @@ export function DefectsClient({ defects, testCases, projects, tags, canEdit, can
             projectId: formProjectId,
         };
 
+        setSubmitting(true);
         try {
             const url = editTarget ? `/api/defects/${editTarget.id}` : "/api/defects";
             const method = editTarget ? "PATCH" : "POST";
@@ -230,10 +233,13 @@ export function DefectsClient({ defects, testCases, projects, tags, canEdit, can
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed");
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleDelete = async (id: string) => {
+        setSubmitting(true);
         try {
             const res = await fetch(`/api/defects/${id}`, { method: "DELETE" });
             if (!res.ok) throw new Error((await res.json()).message);
@@ -242,6 +248,8 @@ export function DefectsClient({ defects, testCases, projects, tags, canEdit, can
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to delete");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -551,9 +559,10 @@ export function DefectsClient({ defects, testCases, projects, tags, canEdit, can
                         <Button
                             variant="destructive"
                             onClick={() => deleteId && handleDelete(deleteId)}
-                            disabled={isPending}
+                            disabled={busy}
                         >
-                            Delete
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Deleting..." : "Delete"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -697,8 +706,9 @@ export function DefectsClient({ defects, testCases, projects, tags, canEdit, can
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSubmit} disabled={isPending}>
-                            {isPending ? "Saving..." : editTarget ? "Save" : "Create"}
+                        <Button onClick={handleSubmit} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Saving..." : editTarget ? "Save" : "Create"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

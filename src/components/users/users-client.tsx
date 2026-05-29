@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,8 @@ const PAGE_SIZE = 10;
 export function UsersClient({ users }: UsersClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [submitting, setSubmitting] = useState(false);
+    const busy = isPending || submitting;
     const { value: searchValue, setValue: setSearch } = useDebouncedValue("", 300);
     const [page, setPage] = useState(1);
     const [roleFilter, setRoleFilter] = useState("all");
@@ -87,6 +89,7 @@ export function UsersClient({ users }: UsersClientProps) {
         if (!email.trim()) { toast.error("Email is required"); return; }
         if (!password.trim() || password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
 
+        setSubmitting(true);
         try {
             const res = await fetch("/api/users", {
                 method: "POST",
@@ -103,6 +106,8 @@ export function UsersClient({ users }: UsersClientProps) {
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to create user");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -232,8 +237,9 @@ export function UsersClient({ users }: UsersClientProps) {
                         <Button variant="outline" onClick={() => { resetForm(); setFormOpen(false); }}>
                             Cancel
                         </Button>
-                        <Button onClick={handleCreate} disabled={isPending}>
-                            {isPending ? "Creating..." : "Create"}
+                        <Button onClick={handleCreate} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Creating..." : "Create"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

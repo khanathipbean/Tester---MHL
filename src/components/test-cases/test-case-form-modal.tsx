@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2 } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -357,6 +358,7 @@ export function TestCaseFormModal({
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isLoading ? "Saving..." : isEditing ? "Save Changes" : "Create"}
                         </Button>
                     </DialogFooter>

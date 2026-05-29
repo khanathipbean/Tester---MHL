@@ -3,7 +3,7 @@
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, MinusCircle, AlertTriangle, Bug, Search, X, Pencil } from "lucide-react";
+import { CheckCircle2, XCircle, MinusCircle, AlertTriangle, Bug, Search, X, Pencil, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +79,8 @@ const execStatusStyle: Record<string, string> = {
 export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [submitting, setSubmitting] = useState(false);
+    const busy = isPending || submitting;
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [expandMode, setExpandMode] = useState<"fail" | "blocked">("fail");
     const [actualResult, setActualResult] = useState("");
@@ -154,6 +156,7 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
     const passAllNotRun = async () => {
         const notRunExecs = testRun.executions.filter((e) => e.status === "NOT_RUN");
         if (notRunExecs.length === 0) { toast.info("No test cases to pass"); return; }
+        setSubmitting(true);
         try {
             for (const exec of notRunExecs) {
                 const res = await fetch(`/api/test-runs/${testRun.id}`, {
@@ -167,6 +170,8 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to pass all");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -181,6 +186,7 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
 
     const handleEditName = async () => {
         if (!editNameValue.trim()) { toast.error("Name is required"); return; }
+        setSubmitting(true);
         try {
             const res = await fetch(`/api/test-runs/${testRun.id}`, {
                 method: "PATCH",
@@ -193,11 +199,14 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to update name");
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleCreateDefect = async () => {
         if (!defectTitle.trim() || !defectExec) { toast.error("Title is required"); return; }
+        setSubmitting(true);
         try {
             const res = await fetch("/api/defects", {
                 method: "POST",
@@ -234,6 +243,8 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to create defect");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -288,7 +299,7 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
                         onClick={() => setPassAllConfirm(true)}
                         disabled={isPending}
                     >
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
                         Pass All ({notRun})
                     </Button>
                 )}
@@ -475,9 +486,9 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
                         <Button
                             className="bg-green-600 hover:bg-green-700 text-white"
                             onClick={() => { setPassAllConfirm(false); passAllNotRun(); }}
-                            disabled={isPending}
+                            disabled={busy}
                         >
-                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
                             Confirm Pass All
                         </Button>
                     </DialogFooter>
@@ -531,7 +542,10 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setDefectOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreateDefect} disabled={isPending}>Create</Button>
+                        <Button onClick={handleCreateDefect} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Creating..." : "Create"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -552,7 +566,10 @@ export function TestRunExecute({ testRun, canEdit }: TestRunExecuteProps) {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setEditNameOpen(false)}>Cancel</Button>
-                        <Button onClick={handleEditName} disabled={isPending}>Save</Button>
+                        <Button onClick={handleEditName} disabled={busy}>
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Saving..." : "Save"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

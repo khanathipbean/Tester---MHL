@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -98,6 +99,7 @@ export function ChangePasswordModal({ open, onOpenChange, user }: ChangePassword
                         Cancel
                     </Button>
                     <Button onClick={handleSubmit} disabled={isPending}>
+                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isPending ? "Saving..." : "Save"}
                     </Button>
                 </DialogFooter>

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { KeyRound, Shield, Trash2 } from "lucide-react";
+import { KeyRound, Shield, Trash2, Loader2 } from "lucide-react";
 
 import {
     Table,
@@ -50,11 +50,14 @@ const roleBadgeStyle: Record<string, string> = {
 export function UserTable({ users }: UserTableProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [submitting, setSubmitting] = useState(false);
+    const busy = isPending || submitting;
     const [editUser, setEditUser] = useState<User | null>(null);
     const [passwordUser, setPasswordUser] = useState<User | null>(null);
     const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
     const handleDelete = async (id: string) => {
+        setSubmitting(true);
         try {
             const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
             if (!res.ok) {
@@ -66,6 +69,8 @@ export function UserTable({ users }: UserTableProps) {
             startTransition(() => router.refresh());
         } catch (e: unknown) {
             toast.error(e instanceof Error ? e.message : "Failed to delete user");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -179,9 +184,10 @@ export function UserTable({ users }: UserTableProps) {
                         <Button
                             variant="destructive"
                             onClick={() => deleteUser && handleDelete(deleteUser.id)}
-                            disabled={isPending}
+                            disabled={busy}
                         >
-                            Delete
+                            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {busy ? "Deleting..." : "Delete"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

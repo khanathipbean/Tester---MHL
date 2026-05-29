@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { useModules } from "@/hooks/use-modules";
 
 const formSchema = z.object({
@@ -126,6 +127,7 @@ export function ModuleFormModal({
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isLoading ? "Saving..." : isEditing ? "Save Changes" : "Create"}
                         </Button>
                     </DialogFooter>
