@@ -18,6 +18,6 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Cache the instance globally in ALL environments
+// In serverless (Netlify), this helps reuse connections within the same container
+globalForPrisma.prisma = prisma;
