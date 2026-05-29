@@ -34,7 +34,7 @@ const getTestCasesData = unstable_cache(
             }),
         ]),
     ["test-cases-list"],
-    { revalidate: 30, tags: ["test-cases"] }
+    { revalidate: 300, tags: ["test-cases"] }
 );
 
 export default async function TestCasesPage() {

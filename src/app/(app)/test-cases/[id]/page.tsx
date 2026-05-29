@@ -34,8 +34,16 @@ const getCachedTestCase = (id: string) =>
     unstable_cache(
         () => getTestCase(id),
         [`test-case-${id}`],
-        { revalidate: 30, tags: [`test-case-${id}`] }
+        { revalidate: 300, tags: [`test-case-${id}`] }
     )();
+
+// Pre-render all test case detail pages at build time
+export async function generateStaticParams() {
+    const testCases = await prisma.testCase.findMany({
+        select: { id: true },
+    });
+    return testCases.map((tc) => ({ id: tc.id }));
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
