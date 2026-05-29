@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { Loader2, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -107,6 +108,7 @@ export function TestCaseTable({
 }: TestCaseTableProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [navigatingId, setNavigatingId] = useState<string | null>(null);
     const [editCase, setEditCase] = useState<TestCase | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<TestCase | null>(null);
 
@@ -136,6 +138,12 @@ export function TestCaseTable({
 
     return (
         <>
+            {/* Hidden prefetch links for fast navigation */}
+            <div className="hidden">
+                {testCases.map((tc) => (
+                    <Link key={tc.id} href={`/test-cases/${tc.id}`} prefetch={true} />
+                ))}
+            </div>
             <div className="overflow-x-auto rounded-lg border">
                 <Table>
                     <TableHeader>
@@ -154,11 +162,17 @@ export function TestCaseTable({
                         {testCases.map((tc) => (
                             <TableRow
                                 key={tc.id}
-                                className="cursor-pointer"
-                                onClick={() => router.push(`/test-cases/${tc.id}`)}
+                                className={`cursor-pointer ${navigatingId === tc.id ? "opacity-60" : ""}`}
+                                onClick={() => {
+                                    setNavigatingId(tc.id);
+                                    startTransition(() => router.push(`/test-cases/${tc.id}`));
+                                }}
                             >
                                 <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                                    {tc.key}
+                                    <span className="flex items-center gap-1.5">
+                                        {navigatingId === tc.id && <Loader2 className="h-3 w-3 animate-spin" />}
+                                        {tc.key}
+                                    </span>
                                 </TableCell>
                                 <TableCell className="text-muted-foreground whitespace-nowrap max-w-[120px] truncate">
                                     {tc.suite?.name || "—"}

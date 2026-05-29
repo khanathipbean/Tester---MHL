@@ -31,6 +31,7 @@ interface DefectLink {
 
 interface TestCaseData {
     id: string;
+    projectId: string;
     key: string;
     title: string;
     description: string | null;
@@ -99,7 +100,7 @@ export function TestCaseDetail({ testCase }: { testCase: TestCaseData }) {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <Link href="/test-cases" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
+                <Link href={`/test-cases?project=${testCase.projectId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
                     <ArrowLeft className="h-4 w-4" />
                     Back to Test Cases
                 </Link>

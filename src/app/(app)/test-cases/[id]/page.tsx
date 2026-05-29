@@ -1,27 +1,18 @@
+import { cache } from "react";
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect, notFound } from "next/navigation";
 import { TestCaseDetail } from "@/components/test-cases/test-case-detail";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    const tc = await prisma.testCase.findUnique({ where: { id }, select: { key: true, title: true } });
-    return { title: tc ? `${tc.key} - ${tc.title}` : "Test Case" };
-}
-
-export default async function TestCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const user = await getCurrentUser();
-    if (!user) redirect("/login");
-
-    const { id } = await params;
-
-    const testCase = await prisma.testCase.findUnique({
+const getTestCase = cache((id: string) =>
+    prisma.testCase.findUnique({
         where: { id },
         include: {
             suite: { select: { id: true, name: true } },
             defects: {
                 select: { id: true, key: true, title: true, severity: true, status: true },
                 orderBy: { createdAt: "desc" },
+                take: 20,
             },
             executions: {
                 select: {
@@ -35,7 +26,22 @@ export default async function TestCaseDetailPage({ params }: { params: Promise<{
                 take: 10,
             },
         },
-    });
+    })
+);
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const tc = await getTestCase(id);
+    return { title: tc ? `${tc.key} - ${tc.title}` : "Test Case" };
+}
+
+export default async function TestCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const user = await getCurrentUser();
+    if (!user) redirect("/login");
+
+    const { id } = await params;
+
+    const testCase = await getTestCase(id);
 
     if (!testCase) notFound();
 
